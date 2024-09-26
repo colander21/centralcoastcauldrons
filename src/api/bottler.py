@@ -3,6 +3,9 @@ from enum import Enum
 from pydantic import BaseModel
 from src.api import auth
 
+import sqlalchemy
+from src import database as db
+
 router = APIRouter(
     prefix="/bottler",
     tags=["bottler"],
@@ -32,10 +35,17 @@ def get_bottle_plan():
 
     # Initial logic: bottle all barrels into red potions.
 
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("select num_green_ml from global_inventory;"))
+        green_ml = result
+
+        num_green_potions_bottled = green_ml//100
+
+
     return [
             {
-                "potion_type": [100, 0, 0, 0],
-                "quantity": 5,
+                "potion_type": [0, 100, 0, 0],
+                "quantity": num_green_potions_bottled,
             }
         ]
 

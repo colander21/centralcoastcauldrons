@@ -4,3 +4,5 @@ venv
 __pycache__
 /.env
 info.log
+src/test.py
+src/test.py

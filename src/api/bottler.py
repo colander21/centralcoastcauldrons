@@ -47,8 +47,9 @@ def get_bottle_plan():
 
     with db.engine.begin() as connection:
         num_green_ml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory;"))
+
     
-    num_green_potions_mixed = num_green_ml // 100
+    num_green_potions_mixed = num_green_ml[0] // 100
     
 
 

@@ -17,6 +17,9 @@ def get_catalog():
 
     print(num_green_potions[0])
 
+    if num_green_potions[0] == 0:
+        return []
+
     return [
             {
                 "sku": "GREEN_POTION_0",

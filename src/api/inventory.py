@@ -23,11 +23,16 @@ class Inventory(BaseModel):
 def get_inventory():
     """ """
     with db.engine.begin() as connection:
-        num_green_potions = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory;"))
-        num_green_ml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory;"))
-        gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory;"))
-    
-    return {"number_of_potions": num_green_potions[0], "ml_in_barrels": num_green_ml[0], "gold": gold[0]}
+        num_green_potions_cursor = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory;"))
+        num_green_potions_data = num_green_potions_cursor.fetchone()
+        
+        num_green_ml_cursor = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory;"))
+        num_green_ml_data = num_green_ml_cursor.fetchone()
+        
+        gold_cursor = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory;"))
+        gold_data = gold_cursor.fetchone()
+
+    return {"number_of_potions":num_green_potions_data[0], "ml_in_barrels":num_green_ml_data[0], "gold":gold_data[0]}
 
 # Gets called once a day
 @router.post("/plan")
@@ -55,3 +60,4 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
     """
 
     return "OK"
+

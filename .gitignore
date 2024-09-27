@@ -6,3 +6,5 @@ __pycache__
 info.log
 src/test.py
 src/test.py
+.venv
+.env

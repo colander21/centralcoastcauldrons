@@ -58,13 +58,17 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
     for item in wholesale_catalog:
         print(num_green_potions_data[0])
-        if item.sku == "SMALL_GREEN_BARREL" and num_green_potions_data[0] < 10 and item.price <= gold_data[0]:
+        print(actual_gold)
+        if item.sku == "SMALL_GREEN_BARREL" and num_green_potions_data[0] < 10 and item.price <= actual_gold:
             num_small_green_barrels_to_purchase +=1
             actual_gold -= item.price
 
-    return [
-        {
-            "sku": "SMALL_GREEN_BARREL",
-            "quantity": num_small_green_barrels_to_purchase,
-        }
-    ]
+
+    if(num_small_green_barrels_to_purchase > 0):
+        return [
+            {
+                "sku": "SMALL_GREEN_BARREL",
+                "quantity": num_small_green_barrels_to_purchase,
+            }
+        ]
+    return []

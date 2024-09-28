@@ -52,14 +52,14 @@ def get_bottle_plan():
     
     num_green_potions_mixed = num_green_ml_data[0] // 100
     
-
-
-    return [
+    if num_green_potions_mixed > 0:
+        return [
             {
                 "potion_type": [0, 100, 0, 0],
                 "quantity": num_green_potions_mixed,
             }
         ]
+    return []
 
 if __name__ == "__main__":
     print(get_bottle_plan())

@@ -93,8 +93,9 @@ def create_cart(new_cart: Customer):
     """ """
     global cart_id_counter
     cart_id_counter +=1
-    with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text(f"INSERT INTO carts (id, cart_id, quantity, total_cost) VALUES ({cart_id_counter},{cart_id_counter},{0},{0})"))
+    
+    #with db.engine.begin() as connection:
+        #connection.execute(sqlalchemy.text(f"INSERT INTO carts (id, cart_id, quantity, total_cost) VALUES ({cart_id_counter},{cart_id_counter},{0},{0})"))
     return {"cart_id": cart_id_counter}
 
 

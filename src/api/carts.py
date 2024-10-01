@@ -103,6 +103,7 @@ def create_cart(new_cart: Customer):
             cart_id = (next_id_data[0]+1)
         else:
             cart_id = result_data[0][3]
+            connection.execute(sqlalchemy.text(f"UPDATE carts SET quantity = 0, total_cost = 0 WHERE customer_name = '{new_cart.customer_name}';"))
     return {"cart_id": cart_id}
 
 
@@ -116,7 +117,11 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     print("This is the item sku: ", item_sku)
     """ """
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text(f"UPDATE carts SET quantity = {cart_item.quantity} WHERE cart_id = {cart_id};"))
+        potion_price_cursor = connection.execute(sqlalchemy.text(f"SELECT price FROM global_inventory WHERE sku = '{item_sku}';"))
+        potion_price_data = potion_price_cursor.fetchone()
+        connection.execute(sqlalchemy.text(f"UPDATE carts SET quantity = {cart_item.quantity}, total_cost = total_cost + {cart_item.quantity * potion_price_data.price} WHERE cart_id = {cart_id};"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_potions = num_potions - {cart_item.quantity} WHERE sku = '{item_sku}';"))
+
 
     return "OK"
 
@@ -129,10 +134,9 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
 
     with db.engine.begin() as connection:
-        total_potions_cursor = connection.execute(sqlalchemy.text(f"SELECT quantity FROM carts WHERE cart_id = {cart_id};"))
-        total_potions_data = total_potions_cursor.fetchone()
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_potions = num_potions - {total_potions_data.quantity} WHERE sku = 'GREEN_POTION_0';"))
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold + {total_potions_data.quantity*50}"))
+        checkout_cursor = connection.execute(sqlalchemy.text(f"SELECT quantity,total_cost FROM carts WHERE cart_id = {cart_id};"))
+        checkout_data = checkout_cursor.fetchone()
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold + {checkout_data.total_cost}"))
 
 
-    return {"total_potions_bought": total_potions_data.quantity, "total_gold_paid": total_potions_data.quantity*50}
+    return {"total_potions_bought": checkout_data.quantity, "total_gold_paid": checkout_data.total_cost}

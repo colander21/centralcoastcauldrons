@@ -95,7 +95,10 @@ def create_cart(new_cart: Customer):
     cart_id_counter +=1
     
     #with db.engine.begin() as connection:
-        #connection.execute(sqlalchemy.text(f"INSERT INTO carts (id, cart_id, quantity, total_cost) VALUES ({cart_id_counter},{cart_id_counter},{0},{0})"))
+        #result_cursor = connection.execute(sqlalchemy.text(f"SELECT customer_name, character_class, level, cart_id, quantity, total_cost FROM carts WHERE customer_name = '{new_cart.customer_name}';"))
+        #result_data = result_cursor.fetchone()
+        #if result_data[0] == 
+        #connection.execute(sqlalchemy.text(f"INSERT INTO carts (customer_name, character_class, level, cart_id, quantity, total_cost) VALUES ({new_cart.customer_name},{cart_id_counter},{0},{0});"))
     return {"cart_id": cart_id_counter}
 
 
@@ -118,10 +121,12 @@ class CartCheckout(BaseModel):
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
 
+    print("Amount Paid: ", cart_checkout.payment)
+
     with db.engine.begin() as connection:
         #TODO: add WHERE clause for specific cart_id to get quantity
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = num_green_potions - {cart_checkout.payment//50};"))
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold + {cart_checkout.payment};"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = num_green_potions - {int(cart_checkout.payment)//50};"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold + {int(cart_checkout.payment)};"))
 
 
-    return {"total_potions_bought": cart_checkout.payment//50, "total_gold_paid": cart_checkout.payment}
+    return {"total_potions_bought": int(cart_checkout.payment)//50, "total_gold_paid": int(cart_checkout.payment)}

@@ -7,8 +7,6 @@ import datetime
 import sqlalchemy
 from src import database as db
 
-cart_id_counter = 0
-
 router = APIRouter(
     prefix="/carts",
     tags=["cart"],
@@ -91,15 +89,20 @@ def post_visits(visit_id: int, customers: list[Customer]):
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
-    global cart_id_counter
-    cart_id_counter +=1
     
-    #with db.engine.begin() as connection:
-        #result_cursor = connection.execute(sqlalchemy.text(f"SELECT customer_name, character_class, level, cart_id, quantity, total_cost FROM carts WHERE customer_name = '{new_cart.customer_name}';"))
-        #result_data = result_cursor.fetchone()
-        #if result_data[0] == 
-        #connection.execute(sqlalchemy.text(f"INSERT INTO carts (customer_name, character_class, level, cart_id, quantity, total_cost) VALUES ({new_cart.customer_name},{cart_id_counter},{0},{0});"))
-    return {"cart_id": cart_id_counter}
+    with db.engine.begin() as connection:
+        result_cursor = connection.execute(sqlalchemy.text(f"SELECT customer_name, character_class, level, cart_id, quantity, total_cost FROM carts WHERE customer_name = '{new_cart.customer_name}';"))
+        result_data = result_cursor.fetchall()
+        print(result_data)
+        print(len(result_data))
+        if len(result_data) == 0:
+            next_id_cursor = connection.execute(sqlalchemy.text(f"SELECT cart_id FROM carts ORDER BY cart_id DESC;"))
+            next_id_data = next_id_cursor.fetchone()
+            connection.execute(sqlalchemy.text(f"INSERT INTO carts (customer_name, character_class, level, cart_id, quantity, total_cost) VALUES ('{new_cart.customer_name}','{new_cart.character_class}',{new_cart.level},{next_id_data[0]+1},{0},{0});"))
+            cart_id = (next_id_data[0]+1)
+        else:
+            cart_id = result_data[0][3]
+    return {"cart_id": cart_id}
 
 
 class CartItem(BaseModel):
@@ -109,7 +112,8 @@ class CartItem(BaseModel):
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
-
+    with db.engine.begin() as connection:
+        connection.execute(sqlalchemy.text(f"UPDATE carts SET quantity = {cart_item.quantity} WHERE cart_id = {cart_id};"))
 
     return "OK"
 
@@ -124,9 +128,10 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     print("Amount Paid: ", cart_checkout.payment)
 
     with db.engine.begin() as connection:
-        #TODO: add WHERE clause for specific cart_id to get quantity
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = num_green_potions - {int(cart_checkout.payment)//50};"))
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold + {int(cart_checkout.payment)};"))
+        total_potions_cursor = connection.execute(sqlalchemy.text(f"SELECT quantity FROM carts WHERE cart_id = {cart_id};"))
+        total_potions_data = total_potions_cursor.fetchone()
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = num_green_potions - {total_potions_data[0]};"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold + {total_potions_data[0]*50};"))
 
 
-    return {"total_potions_bought": int(cart_checkout.payment)//50, "total_gold_paid": int(cart_checkout.payment)}
+    return {"total_potions_bought": total_potions_data[0], "total_gold_paid": total_potions_data[0]*50}

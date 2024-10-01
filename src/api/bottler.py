@@ -22,14 +22,21 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
     num_green_potions_mixed = 0
+    num_red_potions_mixed = 0
+    num_blue_potions_mixed = 0
 
     for item in potions_delivered:
         if item.potion_type[1] == 100:
             num_green_potions_mixed += item.quantity
+        if item.potion_type[0] == 100:
+            num_red_potions_mixed += item.quantity
+        if item.potion_type[2] == 100:
+            num_blue_potions_mixed += item.quantity
     
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = num_green_potions + {num_green_potions_mixed};"))
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = num_green_ml - {num_green_potions_mixed * 100};"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_potions = num_potions + {num_green_potions_mixed} WHERE sku = 'GREEN_POTION_0';"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_potions = num_potions + {num_red_potions_mixed} WHERE sku = 'RED_POTION_0';"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_potions = num_potions + {num_blue_potions_mixed} WHERE sku = 'BLUE_POTION_0';"))
 
     return "OK"
 
@@ -45,21 +52,44 @@ def get_bottle_plan():
 
     # Initial logic: bottle all barrels into red potions.
 
+    bottling_plan = []
+
     with db.engine.begin() as connection:
-        num_green_ml_cursor = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory;"))
-        num_green_ml_data = num_green_ml_cursor.fetchone()
+        num_ml_cursor = connection.execute(sqlalchemy.text("SELECT sku,num_ml FROM global_inventory;"))
+        num_ml_data = num_ml_cursor.fetchall()
+
+    for entry in num_ml_data:
+        if entry.sku == "GREEN_POTION_0":
+            num_green_ml = entry.num_ml
+        if entry.sku == "BLUE_POTION_0":
+            num_blue_ml = entry.num_ml
+        if entry.sku == "RED_POTION_0":
+            num_red_ml = entry.num_ml
 
     
-    num_green_potions_mixed = num_green_ml_data[0] // 100
+    num_green_potions_mixed = num_green_ml // 100
+    num_red_potions_mixed = num_red_ml // 100
+    num_blue_potions_mixed = num_blue_ml //100
+
     
     if num_green_potions_mixed > 0:
-        return [
-            {
-                "potion_type": [0, 100, 0, 0],
-                "quantity": num_green_potions_mixed,
-            }
-        ]
-    return []
+        bottling_plan.append({
+             "potion_type": [0, 100, 0, 0],
+            "quantity": num_green_potions_mixed,
+        })
+    if num_red_potions_mixed > 0:
+        bottling_plan.append({
+            "potion_type": [100, 0, 0, 0],
+            "quantity": num_red_potions_mixed,
+        })
+    if num_blue_potions_mixed > 0:
+        bottling_plan.append({
+            "potion_type": [0, 0, 100, 0],
+            "quantity": num_blue_potions_mixed,
+        })
+
+
+    return bottling_plan
 
 if __name__ == "__main__":
     print(get_bottle_plan())

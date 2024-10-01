@@ -98,6 +98,7 @@ def create_cart(new_cart: Customer):
         if len(result_data) == 0:
             next_id_cursor = connection.execute(sqlalchemy.text(f"SELECT cart_id FROM carts ORDER BY cart_id DESC;"))
             next_id_data = next_id_cursor.fetchone()
+            print(next_id_data.cart_id +1)
             connection.execute(sqlalchemy.text(f"INSERT INTO carts (customer_name, character_class, level, cart_id, quantity, total_cost) VALUES ('{new_cart.customer_name}','{new_cart.character_class}',{new_cart.level},{next_id_data[0]+1},{0},{0});"))
             cart_id = (next_id_data[0]+1)
         else:
@@ -108,9 +109,11 @@ def create_cart(new_cart: Customer):
 class CartItem(BaseModel):
     quantity: int
 
-
+#TODO ask if customers can add items to the cart and then not checkout
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
+
+    print("This is the item sku: ", item_sku)
     """ """
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text(f"UPDATE carts SET quantity = {cart_item.quantity} WHERE cart_id = {cart_id};"))
@@ -124,8 +127,6 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
-
-    print("Amount Paid: ", cart_checkout.payment)
 
     with db.engine.begin() as connection:
         total_potions_cursor = connection.execute(sqlalchemy.text(f"SELECT quantity FROM carts WHERE cart_id = {cart_id};"))

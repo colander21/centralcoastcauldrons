@@ -63,12 +63,11 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         inventory_cursor = connection.execute(sqlalchemy.text("SELECT sku,num_potions, gold FROM global_inventory;"))
         inventory_data = inventory_cursor.fetchall()
 
-    total_gold = 0
+    total_gold = inventory_data[0].gold
     total_green_potions = 0
     total_red_potions = 0
     total_blue_potions = 0
     for entry in inventory_data:
-        total_gold += entry.gold
         if entry.sku == "GREEN_POTION_0":
             total_green_potions += 1
         if entry.sku == "RED_POTION_0":

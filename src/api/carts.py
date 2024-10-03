@@ -110,7 +110,7 @@ def create_cart(new_cart: Customer):
 class CartItem(BaseModel):
     quantity: int
 
-#TODO ask if customers can add items to the cart and then not checkout
+
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
 

@@ -69,27 +69,30 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     total_blue_potions = 0
     for entry in inventory_data:
         if entry.sku == "GREEN_POTION_0":
-            total_green_potions += 1
+            total_green_potions = entry.num_potions
         if entry.sku == "RED_POTION_0":
-            total_red_potions += 1
+            total_red_potions = entry.num_potions
         if entry.sku == "BLUE_POTION_0":
-            total_blue_potions += 1
+            total_blue_potions = entry.num_potions
 
+    print("Num green : ", total_green_potions)
+    print("Num blue : ", total_blue_potions)
+    print("Num red : ", total_red_potions)
 
     num_small_green_barrels_to_purchase = 0
     num_small_red_barrels_to_purchase = 0
     num_small_blue_barrels_to_purchase = 0
 
     for item in wholesale_catalog:
-        if item.sku == "SMALL_GREEN_BARREL" and total_green_potions < 3 and item.price <= total_gold:
+        if item.sku == "SMALL_GREEN_BARREL" and total_green_potions <= 3 and item.price <= total_gold:
             num_small_green_barrels_to_purchase +=1
             total_gold -= item.price
             print("Bought green barrel")
-        if item.sku == "SMALL_BLUE_BARREL" and total_blue_potions < 3 and item.price <= total_gold:
+        if item.sku == "SMALL_BLUE_BARREL" and total_blue_potions <= 3 and item.price <= total_gold:
             num_small_blue_barrels_to_purchase +=1
             total_gold-= item.price
             print("Bought blue barrel")
-        if item.sku == "SMALL_RED_BARREL" and total_red_potions < 3 and item.price <= total_gold:
+        if item.sku == "SMALL_RED_BARREL" and total_red_potions <= 3 and item.price <= total_gold:
             num_small_red_barrels_to_purchase +=1
             total_gold-= item.price
             print("Bought red barrel")

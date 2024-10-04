@@ -91,19 +91,21 @@ def create_cart(new_cart: Customer):
     """ """
     
     with db.engine.begin() as connection:
-        result_cursor = connection.execute(sqlalchemy.text(f"SELECT customer_name, character_class, level, cart_id, quantity, total_cost FROM carts WHERE customer_name = '{new_cart.customer_name}';"))
+        result_cursor = connection.execute(sqlalchemy.text(f"SELECT customer_name, character_class, level, cart_id, quantity, total_cost FROM carts WHERE customer_name = '{new_cart.customer_name}' and character_class = '{new_cart.character_class}' and level = '{new_cart.level}';"))
         result_data = result_cursor.fetchall()
         print(result_data)
         print(len(result_data))
         if len(result_data) == 0:
             next_id_cursor = connection.execute(sqlalchemy.text(f"SELECT cart_id FROM carts ORDER BY cart_id DESC;"))
             next_id_data = next_id_cursor.fetchone()
-            print(next_id_data.cart_id +1)
-            connection.execute(sqlalchemy.text(f"INSERT INTO carts (customer_name, character_class, level, cart_id, quantity, total_cost) VALUES ('{new_cart.customer_name}','{new_cart.character_class}',{new_cart.level},{next_id_data[0]+1},{0},{0});"))
             cart_id = (next_id_data[0]+1)
+            print(next_id_data.cart_id +1)
+            connection.execute(sqlalchemy.text(f"INSERT INTO carts (customer_name, character_class, level, cart_id, quantity, total_cost) VALUES ('{new_cart.customer_name}','{new_cart.character_class}',{new_cart.level},{cart_id},{0},{0});"))
+            connection.execute(sqlalchemy.text(f"INSERT INTO shopping_cart (id, quantity_green_potions, quantity_blue_potions, quantity_red_potions) VALUES ('{cart_id}',0,0,0);"))
         else:
             cart_id = result_data[0][3]
-            connection.execute(sqlalchemy.text(f"UPDATE carts SET quantity = 0, total_cost = 0 WHERE customer_name = '{new_cart.customer_name}';"))
+            connection.execute(sqlalchemy.text(f"UPDATE carts SET quantity = 0, total_cost = 0 WHERE customer_name = '{new_cart.customer_name}' and character_class = '{new_cart.character_class}' and level = '{new_cart.level}';"))
+            connection.execute(sqlalchemy.text(f"UPDATE shopping_cart SET quantity_green_potions = 0, quantity_red_potions = 0, quantity_blue_potions = 0 WHERE id = '{cart_id}';"))
     return {"cart_id": cart_id}
 
 
@@ -111,6 +113,7 @@ class CartItem(BaseModel):
     quantity: int
 
 
+# TODO create new table in db to track individual cart items with foreign key of cart_id from carts add new entry or update existing entry to all zeros in create_cart()
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
 

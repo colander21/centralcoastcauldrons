@@ -99,13 +99,14 @@ def create_cart(new_cart: Customer):
             next_id_cursor = connection.execute(sqlalchemy.text(f"SELECT cart_id FROM carts ORDER BY cart_id DESC;"))
             next_id_data = next_id_cursor.fetchone()
             cart_id = (next_id_data[0]+1)
-            print(next_id_data.cart_id +1)
+            print("This is the next cart_id: ",next_id_data.cart_id +1)
             connection.execute(sqlalchemy.text(f"INSERT INTO carts (customer_name, character_class, level, cart_id, quantity, total_cost) VALUES ('{new_cart.customer_name}','{new_cart.character_class}',{new_cart.level},{cart_id},{0},{0});"))
             connection.execute(sqlalchemy.text(f"INSERT INTO shopping_cart (id, quantity_green_potions, quantity_blue_potions, quantity_red_potions) VALUES ('{cart_id}',0,0,0);"))
         else:
             cart_id = result_data[0][3]
             connection.execute(sqlalchemy.text(f"UPDATE carts SET quantity = 0, total_cost = 0 WHERE customer_name = '{new_cart.customer_name}' and character_class = '{new_cart.character_class}' and level = '{new_cart.level}';"))
             connection.execute(sqlalchemy.text(f"UPDATE shopping_cart SET quantity_green_potions = 0, quantity_red_potions = 0, quantity_blue_potions = 0 WHERE id = '{cart_id}';"))
+        print("Cart id = ", {cart_id})
     return {"cart_id": cart_id}
 
 

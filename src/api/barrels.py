@@ -31,13 +31,13 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     total_cost = 0
 
     for barrel in barrels_delivered:
-        if barrel.sku == "SMALL_GREEN_BARREL":
+        if barrel.potion_type[1] == 1:
             num_green_ml_delivered += barrel.quantity * barrel.ml_per_barrel
             total_cost += barrel.price * barrel.quantity
-        if barrel.sku == "SMALL_BLUE_BARREL":
+        if barrel.potion_type[2] == 1:
             num_blue_ml_delivered += barrel.quantity * barrel.ml_per_barrel
             total_cost += barrel.price * barrel.quantity
-        if barrel.sku == "SMALL_RED_BARREL":
+        if barrel.potion_type[0] == 1:
             num_red_ml_delivered += barrel.quantity * barrel.ml_per_barrel
             total_cost += barrel.price * barrel.quantity
 
@@ -84,15 +84,15 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     num_small_blue_barrels_to_purchase = 0
 
     for item in wholesale_catalog:
-        if item.sku == "SMALL_GREEN_BARREL" and total_green_potions <= 10 and item.price <= total_gold:
+        if (item.sku == "SMALL_GREEN_BARREL" or item.sku == "MEDIUM_GREEN_BARREL") and total_green_potions <= 10 and item.price <= total_gold:
             num_small_green_barrels_to_purchase +=1
             total_gold -= item.price
             print("Bought green barrel")
-        if item.sku == "SMALL_BLUE_BARREL" and total_blue_potions <= 10 and item.price <= total_gold:
+        if (item.sku == "SMALL_BLUE_BARREL" or item.sku == "MEDIUM_BLUE_BARREL") and total_blue_potions <= 10 and item.price <= total_gold:
             num_small_blue_barrels_to_purchase +=1
             total_gold-= item.price
             print("Bought blue barrel")
-        if item.sku == "SMALL_RED_BARREL" and total_red_potions <= 10 and item.price <= total_gold:
+        if (item.sku == "SMALL_RED_BARREL" or item.sku == "MEDIUM_RED_BARREL") and total_red_potions <= 10 and item.price <= total_gold:
             num_small_red_barrels_to_purchase +=1
             total_gold-= item.price
             print("Bought red barrel")

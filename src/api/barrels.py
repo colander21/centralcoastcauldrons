@@ -33,13 +33,16 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     for barrel in barrels_delivered:
         if barrel.potion_type[1] == 1:
             num_green_ml_delivered += barrel.quantity * barrel.ml_per_barrel
+            print("Green ml: ", num_green_ml_delivered)
             total_cost += barrel.price * barrel.quantity
         if barrel.potion_type[2] == 1:
             num_blue_ml_delivered += barrel.quantity * barrel.ml_per_barrel
             total_cost += barrel.price * barrel.quantity
+            print("Blue ml: ", num_blue_ml_delivered)
         if barrel.potion_type[0] == 1:
             num_red_ml_delivered += barrel.quantity * barrel.ml_per_barrel
             total_cost += barrel.price * barrel.quantity
+            print("Red ml: ", num_red_ml_delivered)
 
 
     with db.engine.begin() as connection:
@@ -83,19 +86,38 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     num_small_red_barrels_to_purchase = 0
     num_small_blue_barrels_to_purchase = 0
 
+    num_medium_blue_barrels_to_purchase = 0
+    num_medium_green_barrels_to_purchase = 0
+    num_medium_red_barrels_to_purchase = 0
+
     for item in wholesale_catalog:
-        if (item.sku == "SMALL_GREEN_BARREL" or item.sku == "MEDIUM_GREEN_BARREL") and total_green_potions <= 10 and item.price <= total_gold:
-            num_small_green_barrels_to_purchase +=1
-            total_gold -= item.price
-            print("Bought green barrel")
-        if (item.sku == "SMALL_BLUE_BARREL" or item.sku == "MEDIUM_BLUE_BARREL") and total_blue_potions <= 10 and item.price <= total_gold:
-            num_small_blue_barrels_to_purchase +=1
-            total_gold-= item.price
-            print("Bought blue barrel")
-        if (item.sku == "SMALL_RED_BARREL" or item.sku == "MEDIUM_RED_BARREL") and total_red_potions <= 10 and item.price <= total_gold:
-            num_small_red_barrels_to_purchase +=1
-            total_gold-= item.price
-            print("Bought red barrel")
+        if total_green_potions <= 10 and item.price <= total_gold:
+            if item.sku == "SMALL_GREEN_BARREL":
+                num_small_green_barrels_to_purchase +=1
+                total_gold -= item.price
+                print("Bought small green barrel")
+            elif item.sku == "MEDIUM_GREEN_BARREL":
+                num_medium_green_barrels_to_purchase +=1
+                total_gold -= item.price
+                print("Bought medium green barrel")
+        if total_blue_potions <= 10 and item.price <= total_gold:
+            if item.sku == "SMALL_BLUE_BARREL":
+                num_small_blue_barrels_to_purchase +=1
+                total_gold -= item.price
+                print("Bought small blue barrel")
+            elif item.sku == "MEDIUM_BLUE_BARREL":
+                num_medium_blue_barrels_to_purchase +=1
+                total_gold -= item.price
+                print("Bought medium blue barrel")
+        if total_red_potions <= 10 and item.price <= total_gold:
+            if item.sku == "SMALL_RED_BARREL":
+                num_small_red_barrels_to_purchase +=1
+                total_gold -= item.price
+                print("Bought small red barrel")
+            elif item.sku == "MEDIUM_RED_BARREL":
+                num_medium_red_barrels_to_purchase +=1
+                total_gold -= item.price
+                print("Bought medium red barrel")
 
 
     if(num_small_green_barrels_to_purchase > 0):
@@ -112,6 +134,22 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         purchase_plan.append({
             "sku": "SMALL_BLUE_BARREL",
             "quantity": num_small_blue_barrels_to_purchase,
+        })
+
+    if(num_medium_green_barrels_to_purchase > 0):
+        purchase_plan.append({
+            "sku": "MEDIUM_GREEN_BARREL",
+            "quantity": num_medium_green_barrels_to_purchase,
+        })
+    if(num_medium_red_barrels_to_purchase > 0):
+        purchase_plan.append({
+            "sku": "MEDIUM_RED_BARREL",
+            "quantity": num_medium_red_barrels_to_purchase,
+        })
+    if(num_medium_blue_barrels_to_purchase > 0):
+        purchase_plan.append({
+            "sku": "MEDIUM_BLUE_BARREL",
+            "quantity": num_medium_blue_barrels_to_purchase,
         })
 
     return purchase_plan

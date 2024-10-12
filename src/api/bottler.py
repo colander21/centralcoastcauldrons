@@ -60,7 +60,7 @@ def get_bottle_plan():
     bottling_plan = []
 
     with db.engine.begin() as connection:
-        num_ml_cursor = connection.execute(sqlalchemy.text("SELECT sku,num_ml FROM global_inventory;"))
+        num_ml_cursor = connection.execute(sqlalchemy.text("SELECT sku,num_ml,num_potions FROM global_inventory;"))
         num_ml_data = num_ml_cursor.fetchall()
 
     for entry in num_ml_data:
@@ -75,6 +75,11 @@ def get_bottle_plan():
     num_green_potions_mixed = num_green_ml // 100
     num_red_potions_mixed = num_red_ml // 100
     num_blue_potions_mixed = num_blue_ml //100
+
+    while(num_blue_potions_mixed+num_red_potions_mixed+num_green_potions_mixed+num_ml_data.num_potions > 50):
+        num_blue_potions_mixed -= 5
+        num_green_potions_mixed -= 5
+        num_red_potions_mixed -= 5
 
     
     if num_green_potions_mixed > 0:

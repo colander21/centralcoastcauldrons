@@ -77,9 +77,12 @@ def get_bottle_plan():
     num_blue_potions_mixed = num_blue_ml //100
 
     while(num_blue_potions_mixed+num_red_potions_mixed+num_green_potions_mixed+num_ml_data[0].num_potions > 50):
-        num_blue_potions_mixed -= 1
-        num_green_potions_mixed -= 1
-        num_red_potions_mixed -= 1
+        if(num_blue_potions_mixed > 0):
+            num_blue_potions_mixed -= 1
+        if(num_green_potions_mixed > 0):
+            num_green_potions_mixed -= 1
+        if(num_red_potions_mixed > 0):
+            num_red_potions_mixed -= 1
 
     
     if num_green_potions_mixed > 0:

@@ -23,19 +23,11 @@ class Inventory(BaseModel):
 def get_inventory():
     """ """
     with db.engine.begin() as connection:
-        num_potions_cursor = connection.execute(sqlalchemy.text("SELECT num_potions, num_ml, gold, sku FROM global_inventory;"))
-        num_potions_data = num_potions_cursor.fetchall()
-        
-        total_potions = 0
-        total_ml = 0
-        total_gold = num_potions_data[0].gold
+        gold_data = connection.execute(sqlalchemy.text("SELECT SUM(gold) AS total_gold FROM global_inventory;")).fetchone()
+        potions_data = connection.execute(sqlalchemy.text("SELECT SUM(num_potions) AS total_potions FROM potions;")).fetchone()
+        ml_data = connection.execute(sqlalchemy.text("SELECT SUM(num_ml_red + num_ml_green + num_ml_blue + num_ml_dark) AS total_ml from barrels")).fetchone()
 
-        for entry in num_potions_data:
-            print(entry.sku)
-            total_potions += entry.num_potions
-            total_ml += entry.num_ml
-
-    return {"number_of_potions":total_potions, "ml_in_barrels":total_ml, "gold":total_gold}
+    return {"number_of_potions":potions_data.total_potions, "ml_in_barrels":ml_data.total_ml, "gold":gold_data.total_gold}
 
 # Gets called once a day
 @router.post("/plan")

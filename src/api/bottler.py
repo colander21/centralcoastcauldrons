@@ -30,6 +30,8 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
             AND percent_green = {potion.potion_type[1]}
             AND percent_blue = {potion.potion_type[2]}
             AND percent_dark = {potion.potion_type[3]};'''))
+            connection.execute(sqlalchemy.text(f"UPDATE barrels SET num_ml_red = num_ml_red - {potion.potion_type[0]}, num_ml_green = num_ml_green - {potion.potion_type[1]}, num_ml_blue = num_ml_blue - {potion.potion_type[2]}, num_ml_dark = num_ml_dark - {potion.potion_type[3]};"))
+
 
     return "OK"
 

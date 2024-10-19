@@ -33,7 +33,7 @@ def get_catalog():
         red_potion_cursor = connection.execute(sqlalchemy.text("SELECT sku,name,num_potions,price  FROM global_inventory WHERE sku = 'RED_POTION_0';"))
         red_potion_data = red_potion_cursor.fetchone()'''
 
-        potions_data = connection.execute(sqlalchemy.text("SELECT id, num_ml, num_potions, price, percent_red, percent_green, percent_blue, percent_dark, name FROM potions;")).fetchall()
+        potions_data = connection.execute(sqlalchemy.text("SELECT id, num_potions, price, percent_red, percent_green, percent_blue, percent_dark, name FROM potions ORDER BY id DESC;")).fetchall()
        
     count_of_skus = 0
 

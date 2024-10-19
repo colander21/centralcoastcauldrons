@@ -57,11 +57,14 @@ def get_bottle_plan():
                 AND potions.percent_blue <= barrels.num_ml_blue
                 AND potions.percent_dark <= barrels.num_ml_dark
             ORDER BY potions.id DESC;''')).fetchall()
+
+    if len(num_ml_data) == 0:
+        return bottling_plan
         
-        total_ml_red = num_ml_data[0].num_ml_red
-        total_ml_green = num_ml_data[0].num_ml_green
-        total_ml_blue = num_ml_data[0].num_ml_blue
-        total_ml_dark = num_ml_data[0].num_ml_dark
+    total_ml_red = num_ml_data[0].num_ml_red
+    total_ml_green = num_ml_data[0].num_ml_green
+    total_ml_blue = num_ml_data[0].num_ml_blue
+    total_ml_dark = num_ml_data[0].num_ml_dark
 
     for potion_type in num_ml_data:
         if(potion_type.num_ml_red >= potion_type.percent_red and

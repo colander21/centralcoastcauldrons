@@ -67,22 +67,27 @@ def get_bottle_plan():
     total_ml_green = num_ml_data[0].num_ml_green
     total_ml_blue = num_ml_data[0].num_ml_blue
     total_ml_dark = num_ml_data[0].num_ml_dark
+    total_ml = total_ml_red + total_ml_green + total_ml_blue + total_ml_dark
+    print("Total ml = ", total_ml)
 
-    for potion_type in num_ml_data:
-        if(potion_type.num_ml_red >= potion_type.percent_red and
-            potion_type.num_ml_green >= potion_type.percent_green and
-            potion_type.num_ml_blue >= potion_type.percent_blue and
-            potion_type.num_ml_dark >= potion_type.percent_dark):
+    # Loop through until SUM(ml_red + ml_green + ml_blue + ml_dark) < amount needed for each potion in the list
+    while total_ml >= 100:
+        for potion_type in num_ml_data:
+            if(total_ml_red >= potion_type.percent_red and
+                total_ml_green >= potion_type.percent_green and
+                total_ml_blue >= potion_type.percent_blue and
+                total_ml_dark >= potion_type.percent_dark):
 
-            total_ml_red -= potion_type.percent_red
-            total_ml_green -= potion_type.percent_green
-            total_ml_blue -= potion_type.percent_blue
-            total_ml_dark -= potion_type.percent_dark
-            bottling_plan.append({
-                "potion_type": [potion_type.percent_red, potion_type.percent_green, potion_type.percent_blue, potion_type.percent_dark],
-                "quantity": 1,
-            })
-            print(f"{potion_type.name} potion added to bottling plan")
+                total_ml_red -= potion_type.percent_red
+                total_ml_green -= potion_type.percent_green
+                total_ml_blue -= potion_type.percent_blue
+                total_ml_dark -= potion_type.percent_dark
+                total_ml -= 100
+                bottling_plan.append({
+                    "potion_type": [potion_type.percent_red, potion_type.percent_green, potion_type.percent_blue, potion_type.percent_dark],
+                    "quantity": 1
+                })
+                print(f"{potion_type.name} potion added to bottling plan \n Red ML left = {total_ml_red} \n Green ML left = {total_ml_green} \n Blue ML left = {total_ml_blue} \n Dark ML left = {total_ml_dark} \n")
 
 
     return bottling_plan

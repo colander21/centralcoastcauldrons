@@ -71,23 +71,22 @@ def get_bottle_plan():
     print("Total ml = ", total_ml)
 
     # Loop through until SUM(ml_red + ml_green + ml_blue + ml_dark) < amount needed for each potion in the list
-    while total_ml >= 100:
-        for potion_type in num_ml_data:
-            if(total_ml_red >= potion_type.percent_red and
-                total_ml_green >= potion_type.percent_green and
-                total_ml_blue >= potion_type.percent_blue and
-                total_ml_dark >= potion_type.percent_dark):
+    for potion_type in num_ml_data:
+        if(total_ml_red >= potion_type.percent_red and
+            total_ml_green >= potion_type.percent_green and
+            total_ml_blue >= potion_type.percent_blue and
+            total_ml_dark >= potion_type.percent_dark):
 
-                total_ml_red -= potion_type.percent_red
-                total_ml_green -= potion_type.percent_green
-                total_ml_blue -= potion_type.percent_blue
-                total_ml_dark -= potion_type.percent_dark
-                total_ml -= 100
-                bottling_plan.append({
-                    "potion_type": [potion_type.percent_red, potion_type.percent_green, potion_type.percent_blue, potion_type.percent_dark],
-                    "quantity": 1
-                })
-                print(f"{potion_type.name} potion added to bottling plan \n Red ML left = {total_ml_red} \n Green ML left = {total_ml_green} \n Blue ML left = {total_ml_blue} \n Dark ML left = {total_ml_dark} \n")
+            total_ml_red -= potion_type.percent_red
+            total_ml_green -= potion_type.percent_green
+            total_ml_blue -= potion_type.percent_blue
+            total_ml_dark -= potion_type.percent_dark
+            total_ml -= 100
+            bottling_plan.append({
+                "potion_type": [potion_type.percent_red, potion_type.percent_green, potion_type.percent_blue, potion_type.percent_dark],
+                "quantity": 1
+            })
+            print(f"{potion_type.name} potion added to bottling plan \n Red ML left = {total_ml_red} \n Green ML left = {total_ml_green} \n Blue ML left = {total_ml_blue} \n Dark ML left = {total_ml_dark} \n")
 
 
     return bottling_plan

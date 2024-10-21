@@ -69,9 +69,8 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         potions_data = connection.execute(sqlalchemy.text("SELECT SUM(num_potions) AS total_potions FROM potions;")).fetchone()
         ml_data = connection.execute(sqlalchemy.text("SELECT SUM(num_ml_red + num_ml_green + num_ml_blue + num_ml_dark) AS total_ml FROM barrels;")).fetchone()
         gold_data = connection.execute(sqlalchemy.text("SELECT SUM(gold) AS total_gold FROM global_inventory;")).fetchone()
+        #capacity_data = connection.execute(sqlalchemy.text("SELECT SUM(potion_capacity) AS potion_capacity, SUM(ml_capacity) AS ml_capacity FROM capacity;")).fetchone()
 
-    # for potion in potions_data:
-    #     print(f"Num {potion.name}: {potion.num_potions}")
 
     num_small_green_barrels_to_purchase = 0
     num_small_red_barrels_to_purchase = 0
@@ -89,6 +88,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
 # For later - make categories to choose what size barrels to buy depending on total_gold
     for item in wholesale_catalog:
+        # still need to fix based on potion cap * something
         if potions_data.total_potions < 15 and total_ml <= 10000 and item.price <= total_gold:
             if item.sku == "SMALL_GREEN_BARREL":
                 num_small_green_barrels_to_purchase +=1

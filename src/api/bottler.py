@@ -69,36 +69,38 @@ def get_bottle_plan():
     total_ml_dark = num_ml_data[0].num_ml_dark
     total_ml = total_ml_red + total_ml_green + total_ml_blue + total_ml_dark
 
-    # Loop through until SUM(ml_red + ml_green + ml_blue + ml_dark) < amount needed for each potion in the list
+    # 300 and 400 determined by number of distinct potion types in db containing that color of ml multiplied by 100
+    max_red_mix = total_ml_red // 300
+    max_green_mix = total_ml_green // 300
+    max_blue_mix = total_ml_blue // 300
+    max_dark_mix = total_ml_dark // 400
+
     for potion_type in num_ml_data:
         if(total_ml_red >= potion_type.percent_red and
             total_ml_green >= potion_type.percent_green and
             total_ml_blue >= potion_type.percent_blue and
             total_ml_dark >= potion_type.percent_dark):
 
-            
             min_red_mix = 1000000
             min_green_mix = 1000000
             min_blue_mix = 1000000
             min_dark_mix = 1000000
 
             if potion_type.percent_red > 0:
-                min_red_mix = min(total_ml_red // potion_type.percent_red, total_ml_red // 300) #300 determined by number of potions containing that color of ml multiplied by 100
+                min_red_mix = min(total_ml_red // potion_type.percent_red, max_red_mix) 
 
             if potion_type.percent_green > 0:
-                min_green_mix = min(total_ml_green // potion_type.percent_green, total_ml_green // 300)
+                min_green_mix = min(total_ml_green // potion_type.percent_green, max_green_mix)
             
             if potion_type.percent_blue > 0:
-                min_blue_mix = min(total_ml_blue // potion_type.percent_blue, total_ml_blue // 300)
+                min_blue_mix = min(total_ml_blue // potion_type.percent_blue, max_blue_mix)
 
             if potion_type.percent_dark > 0:
-                min_dark_mix = min(total_ml_dark // potion_type.percent_dark, total_ml_dark // 200)
+                min_dark_mix = min(total_ml_dark // potion_type.percent_dark, max_dark_mix)
             
             potions_mixed = min(min_red_mix, min_green_mix, min_blue_mix, min_dark_mix)
-            
 
             total_ml -= 100
-            
             total_ml_red -= potions_mixed * potion_type.percent_red
             total_ml_green -= potions_mixed * potion_type.percent_green
             total_ml_blue -= potions_mixed * potion_type.percent_blue

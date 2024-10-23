@@ -105,11 +105,11 @@ def get_bottle_plan():
             total_ml_green -= potions_mixed * potion_type.percent_green
             total_ml_blue -= potions_mixed * potion_type.percent_blue
             total_ml_dark -= potions_mixed * potion_type.percent_dark
-
-            bottling_plan.append({
-                "potion_type": [potion_type.percent_red, potion_type.percent_green, potion_type.percent_blue, potion_type.percent_dark],
-                "quantity": potions_mixed
-            })
+            if potions_mixed > 0:
+                bottling_plan.append({
+                    "potion_type": [potion_type.percent_red, potion_type.percent_green, potion_type.percent_blue, potion_type.percent_dark],
+                    "quantity": potions_mixed
+                })
 
 
     return bottling_plan

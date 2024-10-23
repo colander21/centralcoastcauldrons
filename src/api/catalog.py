@@ -48,7 +48,7 @@ def get_catalog():
                 "name": potion.name,
                 "quantity": potion.num_potions,
                 "price": potion.price,
-                "potion_type": [potion.percent_red, potion.percent_green, potion.percent_blue, potion.percent_dark],
+                "potion_type": [potion.percent_red, potion.percent_green, potion.percent_blue, potion.percent_dark]
             })
     
     return catalog_list

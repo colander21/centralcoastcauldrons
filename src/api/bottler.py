@@ -75,6 +75,13 @@ def get_bottle_plan():
     max_blue_mix = total_ml_blue // 300
     max_dark_mix = total_ml_dark // 400
 
+    # sets max amount of potions to 10000 so that all ml are mixed when ml inventory is low (ie early game right after shop is burned down)
+    if(total_ml <= 500):
+        max_red_mix = 10000
+        max_green_mix = 10000
+        max_blue_mix = 10000
+        max_dark_mix = 10000
+
     for potion_type in num_ml_data:
         if(total_ml_red >= potion_type.percent_red and
             total_ml_green >= potion_type.percent_green and

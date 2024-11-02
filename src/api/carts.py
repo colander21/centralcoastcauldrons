@@ -124,15 +124,37 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
 
     with db.engine.begin() as connection:
-        potions_purchased_data = connection.execute(sqlalchemy.text(f"SELECT potion_id, quantity FROM shopping_cart WHERE cart_id = {cart_id};")).fetchall()
+        # potions_purchased_data = connection.execute(sqlalchemy.text(f"SELECT potion_id, quantity FROM shopping_cart WHERE cart_id = {cart_id};")).fetchall()
 
-        checkout_data = connection.execute(sqlalchemy.text(f"SELECT quantity AS total_potions,total_cost FROM carts WHERE id = {cart_id};")).fetchone()
+        # checkout_data = connection.execute(sqlalchemy.text(f"SELECT quantity AS total_potions,total_cost FROM carts WHERE id = {cart_id};")).fetchone()
         
-        connection.execute(sqlalchemy.text(f"INSERT INTO global_inventory (gold) VALUES ({checkout_data.total_cost});"))
+        # connection.execute(sqlalchemy.text(f"INSERT INTO global_inventory (gold) VALUES ({checkout_data.total_cost});"))
 
-        for potion in potions_purchased_data:
-            connection.execute(sqlalchemy.text(f"UPDATE potions SET num_potions = num_potions - {potion.quantity} WHERE id = {potion.potion_id};"))
+        # for potion in potions_purchased_data:
+        #     connection.execute(sqlalchemy.text(f"UPDATE potions SET num_potions = num_potions - {potion.quantity} WHERE id = {potion.potion_id};"))
+
+    
+        total_potions = connection.execute(sqlalchemy.text(
+            '''INSERT INTO potions_ledger 
+            (potion_id, num_potions) 
+            VALUES ((SELECT potion_id FROM shopping_cart WHERE cart_id = :cart_id), 
+            (SELECT -quantity FROM shopping_cart WHERE cart_id = :cart_id))
+            RETURNING num_potions'''),
+            {
+                "cart_id": cart_id
+            }
+            ).fetchone()
         
+        total_paid = connection.execute(sqlalchemy.text(
+            '''INSERT INTO global_inventory 
+            (gold) 
+            VALUES ((SELECT total_cost FROM carts WHERE id = :cart_id))
+            RETURNING gold'''),
+            {
+                "cart_id": cart_id
+            }
+            ).fetchone()
+            
 
 
-    return {"total_potions_bought": checkout_data.total_potions, "total_gold_paid": checkout_data.total_cost}
+    return {"total_potions_bought": -total_potions.num_potions, "total_gold_paid": total_paid.gold}

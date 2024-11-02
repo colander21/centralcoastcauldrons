@@ -3,6 +3,8 @@ from enum import Enum
 from pydantic import BaseModel
 from src.api import auth
 
+import random
+
 import sqlalchemy
 from src import database as db
 
@@ -21,17 +23,34 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     """ """
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
-#  Fix for multiple potion types
     with db.engine.begin() as connection:
         for potion in potions_delivered:
             connection.execute(sqlalchemy.text(
-            f'''UPDATE potions SET num_potions = num_potions + {potion.quantity}
-            WHERE percent_red = {potion.potion_type[0]}
-            AND percent_green = {potion.potion_type[1]}
-            AND percent_blue = {potion.potion_type[2]}
-            AND percent_dark = {potion.potion_type[3]};'''))
-            connection.execute(sqlalchemy.text(f"UPDATE barrels SET num_ml_red = num_ml_red - {potion.potion_type[0] * potion.quantity}, num_ml_green = num_ml_green - {potion.potion_type[1] * potion.quantity}, num_ml_blue = num_ml_blue - {potion.potion_type[2] * potion.quantity}, num_ml_dark = num_ml_dark - {potion.potion_type[3] * potion.quantity};"))
-
+            '''INSERT INTO potions_ledger (potion_id, num_potions)
+            VALUES ((SELECT id FROM potions
+            WHERE percent_red = :percent_red
+                AND percent_green = :percent_green
+                AND percent_blue = :percent_blue
+                AND percent_dark = :percent_dark),
+            :potion_quantity);'''),
+            {
+                "percent_red": potion.potion_type[0],
+                "percent_green": potion.potion_type[1],
+                "percent_blue": potion.potion_type[2],
+                "percent_dark": potion.potion_type[3],
+                "potion_quantity": potion.quantity
+            }
+            )
+            for i in range(0,4):
+                if potion.potion_type[i] > 0:
+                    connection.execute(sqlalchemy.text(
+                    f'''INSERT INTO ml_ledger (ml_id, num_ml)
+                    VALUES ({i+1}, :num_ml)'''),
+                    {
+                        "num_ml": -(potion.potion_type[i]* potion.quantity),
+                    }
+                    )
+            #connection.execute(sqlalchemy.text(f"UPDATE barrels SET num_ml_red = num_ml_red - {potion.potion_type[0] * potion.quantity}, num_ml_green = num_ml_green - {potion.potion_type[1] * potion.quantity}, num_ml_blue = num_ml_blue - {potion.potion_type[2] * potion.quantity}, num_ml_dark = num_ml_dark - {potion.potion_type[3] * potion.quantity};"))
 
     return "OK"
 
@@ -51,22 +70,43 @@ def get_bottle_plan():
 
     with db.engine.begin() as connection:
         num_ml_data = connection.execute(sqlalchemy.text(
-        '''SELECT potions.id, percent_red, percent_green, percent_blue, percent_dark, num_ml_red, num_ml_green, num_ml_blue, num_ml_dark, name
-            FROM barrels
-            JOIN potions
-                ON potions.percent_red <= barrels.num_ml_red
-                AND potions.percent_green <= barrels.num_ml_green
-                AND potions.percent_blue <= barrels.num_ml_blue
-                AND potions.percent_dark <= barrels.num_ml_dark
-            ORDER BY potions.id DESC;''')).fetchall()
+        '''WITH ml AS (
+        SELECT SUM(num_ml) AS total_ml, ml_id
+        FROM ml_ledger
+        GROUP BY ml_id
+        )
+        SELECT 
+            potions.id, 
+            potions.percent_red, 
+            potions.percent_green, 
+            potions.percent_blue, 
+            potions.percent_dark, 
+            ml_red.total_ml AS total_ml_red, 
+            ml_green.total_ml AS total_ml_green, 
+            ml_blue.total_ml AS total_ml_blue, 
+            ml_dark.total_ml AS total_ml_dark, 
+            potions.name
+        FROM potions
+        JOIN ml AS ml_red ON ml_red.ml_id = 1
+        JOIN ml AS ml_green ON ml_green.ml_id = 2
+        JOIN ml AS ml_blue ON ml_blue.ml_id = 3
+        JOIN ml AS ml_dark ON ml_dark.ml_id = 4
+        WHERE 
+            potions.percent_red <= ml_red.total_ml
+            AND potions.percent_green <= ml_green.total_ml
+            AND potions.percent_blue <= ml_blue.total_ml
+            AND potions.percent_dark <= ml_dark.total_ml
+        ORDER BY potions.id ASC;''')).fetchall()
 
     if len(num_ml_data) == 0:
         return bottling_plan
+    
+    random.shuffle(num_ml_data)
         
-    total_ml_red = num_ml_data[0].num_ml_red
-    total_ml_green = num_ml_data[0].num_ml_green
-    total_ml_blue = num_ml_data[0].num_ml_blue
-    total_ml_dark = num_ml_data[0].num_ml_dark
+    total_ml_red = num_ml_data[0].total_ml_red
+    total_ml_green = num_ml_data[0].total_ml_green
+    total_ml_blue = num_ml_data[0].total_ml_blue
+    total_ml_dark = num_ml_data[0].total_ml_dark
     total_ml = total_ml_red + total_ml_green + total_ml_blue + total_ml_dark
 
     # 300 and 400 determined by number of distinct potion types in db containing that color of ml multiplied by 100
@@ -77,7 +117,7 @@ def get_bottle_plan():
     max_dark_mix = total_ml_dark // 400
 
     # sets max amount of potions to 10000 so that all ml are mixed when ml inventory is low (ie early game right after shop is burned down)
-    if(total_ml <= 500):
+    if(total_ml <= 1000):
         max_red_mix = 10000
         max_green_mix = 10000
         max_blue_mix = 10000

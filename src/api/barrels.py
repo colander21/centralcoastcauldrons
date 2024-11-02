@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from src.api import auth
 
+import random
+
 import sqlalchemy
 from src import database as db
 
@@ -51,7 +53,43 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 
 
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text(f"UPDATE barrels SET num_ml_red = num_ml_red + {num_red_ml_delivered}, num_ml_green = num_ml_green + {num_green_ml_delivered}, num_ml_blue = num_ml_blue + {num_blue_ml_delivered}, num_ml_dark = num_ml_dark + {num_dark_ml_delivered}"))
+        #connection.execute(sqlalchemy.text(f"UPDATE barrels SET num_ml_red = num_ml_red + {num_red_ml_delivered}, num_ml_green = num_ml_green + {num_green_ml_delivered}, num_ml_blue = num_ml_blue + {num_blue_ml_delivered}, num_ml_dark = num_ml_dark + {num_dark_ml_delivered}"))
+        if num_red_ml_delivered > 0:
+            connection.execute(sqlalchemy.text(
+                '''INSERT INTO ml_ledger 
+                (ml_id, num_ml) 
+                VALUES (:color, :num_ml)'''),
+                {
+                    "color": 1,
+                    "num_ml": num_red_ml_delivered
+                })
+        if num_green_ml_delivered > 0:
+            connection.execute(sqlalchemy.text(
+                '''INSERT INTO ml_ledger 
+                (ml_id, num_ml) 
+                VALUES (:color, :num_ml)'''),
+                {
+                    "color": 2,
+                    "num_ml": num_green_ml_delivered
+                })
+        if num_blue_ml_delivered > 0:
+            connection.execute(sqlalchemy.text(
+                '''INSERT INTO ml_ledger 
+                (ml_id, num_ml) 
+                VALUES (:color, :num_ml)'''),
+                {
+                    "color": 3,
+                    "num_ml": num_blue_ml_delivered
+                })
+        if num_dark_ml_delivered > 0:
+            connection.execute(sqlalchemy.text(
+                '''INSERT INTO ml_ledger 
+                (ml_id, num_ml) 
+                VALUES (:color, :num_ml)'''),
+                {
+                    "color": 4,
+                    "num_ml": num_dark_ml_delivered
+                })
 
         connection.execute(sqlalchemy.text(f"INSERT INTO global_inventory (gold) VALUES (:gold);"), [{"gold": -total_cost}])
 
@@ -61,93 +99,117 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
-    print(wholesale_catalog)
+    print(f"\nPre shuffle {wholesale_catalog}\n")
+
+    random.shuffle(wholesale_catalog)
+
+    print(f"\nPost Shuffle {wholesale_catalog}")
 
     purchase_plan = []
 
     with db.engine.begin() as connection:
-        potions_data = connection.execute(sqlalchemy.text("SELECT SUM(num_potions) AS total_potions FROM potions;")).fetchone()
-        ml_data = connection.execute(sqlalchemy.text("SELECT SUM(num_ml_red + num_ml_green + num_ml_blue + num_ml_dark) AS total_ml FROM barrels;")).fetchone()
+        ml_data = connection.execute(sqlalchemy.text("SELECT SUM(num_ml) AS total_ml FROM ml_ledger;")).fetchone()
         gold_data = connection.execute(sqlalchemy.text("SELECT SUM(gold) AS total_gold FROM global_inventory;")).fetchone()
-        #capacity_data = connection.execute(sqlalchemy.text("SELECT SUM(potion_capacity) AS potion_capacity, SUM(ml_capacity) AS ml_capacity FROM capacity;")).fetchone()
+        capacity_data = connection.execute(sqlalchemy.text("SELECT SUM(potion_capacity) AS potion_capacity, SUM(ml_capacity) AS ml_capacity FROM capacity;")).fetchone()
 
 
     num_small_green_barrels_to_purchase = 0
     num_small_red_barrels_to_purchase = 0
     num_small_blue_barrels_to_purchase = 0
-    num_small_dark_barrels_to_purchase = 0
-    num_mini_dark_barrels_to_purchase = 0
+    num_medium_blue_barrels_to_purchase = 0
+    num_medium_green_barrels_to_purchase = 0
+    num_medium_red_barrels_to_purchase = 0
+    num_large_blue_barrels_to_purchase = 0
+    num_large_green_barrels_to_purchase = 0
+    num_large_red_barrels_to_purchase = 0
+
+    num_large_dark_barrels_to_purchase = 0
     total_ml = ml_data.total_ml
     total_gold = gold_data.total_gold
 
-    # num_medium_blue_barrels_to_purchase = 0
-    # num_medium_green_barrels_to_purchase = 0
-    # num_medium_red_barrels_to_purchase = 0
-    # num_medium_dark_barrels_to_purchase = 0
+    # Decide what size barrels to buy
+    barrel_allowances = allowance(total_gold, capacity_data.ml_capacity)
+    print("Barrel Allowance: ", barrel_allowances)
 
+    count_red_barrels_bought = 0
+    count_green_barrels_bought = 0
+    count_blue_barrels_bought = 0
+    if barrel_allowances.get("barrel_size") == "small":
+        for item in wholesale_catalog:
+            if ((total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)) and item.price <= total_gold:
+                if item.sku == "SMALL_GREEN_BARREL":
+                    while(item.price <= total_gold and item.quantity > 0 and count_green_barrels_bought < 5):
+                        num_small_green_barrels_to_purchase +=1
+                        total_gold -= item.price
+                        total_ml += item.ml_per_barrel
+                        print("Bought small green barrel")
+                        count_green_barrels_bought += 1
+                elif item.sku == "SMALL_BLUE_BARREL":
+                    while(item.price <= total_gold and item.quantity > 0 and count_blue_barrels_bought < 5):
+                        num_small_blue_barrels_to_purchase +=1
+                        total_gold -= item.price
+                        total_ml += item.ml_per_barrel
+                        print("Bought small blue barrel")
+                        count_blue_barrels_bought += 1
+                elif item.sku == "SMALL_RED_BARREL":
+                    while(item.price <= total_gold and item.quantity > 0 and count_red_barrels_bought < 5):
+                        num_small_red_barrels_to_purchase +=1
+                        total_gold -= item.price
+                        total_ml += item.ml_per_barrel
+                        print("Bought small red barrel")
+                        count_red_barrels_bought += 1
+    
 
-# For later - make categories to choose what size barrels to buy depending on total_gold
-    for item in wholesale_catalog:
-        # still need to fix based on potion cap * something
-        if potions_data.total_potions < 15 and total_ml <= 10000 and item.price <= total_gold:
-            if item.sku == "SMALL_GREEN_BARREL":
-                num_small_green_barrels_to_purchase +=1
-                total_gold -= item.price
-                total_ml += item.ml_per_barrel
-                print("Bought small green barrel")
-            elif item.sku == "SMALL_BLUE_BARREL":
-                num_small_blue_barrels_to_purchase +=1
-                total_gold -= item.price
-                total_ml += item.ml_per_barrel
-                print("Bought small blue barrel")
-            elif item.sku == "SMALL_RED_BARREL":
-                num_small_red_barrels_to_purchase +=1
-                total_gold -= item.price
-                total_ml += item.ml_per_barrel
-                print("Bought small red barrel")
-            elif item.sku == "SMALL_DARK_BARREL": #Do small dark barrels exist or is it just mini?
-                num_small_dark_barrels_to_purchase +=1
-                total_gold -= item.price
-                total_ml += item.ml_per_barrel
-                print("Bought small dark barrel")
-            elif item.sku == "MINI_DARK_BARREL":
-                num_mini_dark_barrels_to_purchase +=1
-                total_gold -= item.price
-                total_ml += item.ml_per_barrel
-                print("Bought mini dark barrel")
+    if barrel_allowances["barrel_size"] == "medium":
+        for item in wholesale_catalog:
+            if ((total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)) and item.price <= total_gold:
+                if item.sku == "MEDIUM_GREEN_BARREL":
+                    while(item.price <= total_gold and item.quantity > 0 and count_green_barrels_bought < 5):
+                        num_small_green_barrels_to_purchase +=1
+                        total_gold -= item.price
+                        total_ml += item.ml_per_barrel
+                        print("Bought medium green barrel")
+                        count_green_barrels_bought += 1
+                elif item.sku == "MEDIUM_BLUE_BARREL":
+                    while(item.price <= total_gold and item.quantity > 0 and count_blue_barrels_bought < 5):
+                        num_small_blue_barrels_to_purchase +=1
+                        total_gold -= item.price
+                        total_ml += item.ml_per_barrel
+                        print("Bought medium blue barrel")
+                        count_blue_barrels_bought += 1
+                elif item.sku == "MEDIUM_RED_BARREL":
+                    while(item.price <= total_gold and item.quantity > 0 and count_red_barrels_bought < 5):
+                        num_small_red_barrels_to_purchase +=1
+                        total_gold -= item.price
+                        total_ml += item.ml_per_barrel
+                        print("Bought medium red barrel")
+                        count_red_barrels_bought += 1
 
+    if barrel_allowances.get("barrel_size") == "large":
+        for item in wholesale_catalog:
+            if ((total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)) and item.price <= total_gold:
+                if item.sku == "LARGE_GREEN_BARREL":
+                    while(item.price <= total_gold and item.quantity > 0 and count_green_barrels_bought < 5):
+                        num_small_green_barrels_to_purchase +=1
+                        total_gold -= item.price
+                        total_ml += item.ml_per_barrel
+                        print("Bought large green barrel")
+                        count_green_barrels_bought += 1
+                elif item.sku == "LARGE_BLUE_BARREL":
+                    while(item.price <= total_gold and item.quantity > 0 and count_blue_barrels_bought < 5):
+                        num_small_blue_barrels_to_purchase +=1
+                        total_gold -= item.price
+                        total_ml += item.ml_per_barrel
+                        print("Bought large blue barrel")
+                        count_blue_barrels_bought += 1
+                elif item.sku == "LARGE_RED_BARREL":
+                    while(item.price <= total_gold and item.quantity > 0 and count_red_barrels_bought < 5):
+                        num_small_red_barrels_to_purchase +=1
+                        total_gold -= item.price
+                        total_ml += item.ml_per_barrel
+                        print("Bought large red barrel")
+                        count_red_barrels_bought += 1
 
-
-
-
-        # if total_green_potions <= 10 and item.price <= total_gold:
-        #     if item.sku == "SMALL_GREEN_BARREL":
-        #       num_small_green_barrels_to_purchase +=1
-        #       total_gold -= item.price
-        #       print("Bought small green barrel")
-        #     elif item.sku == "MEDIUM_GREEN_BARREL" and total_green_potions + total_blue_potions + total_red_potions <= 10:
-        #         num_medium_green_barrels_to_purchase +=1
-        #         total_gold -= item.price
-        #         print("Bought medium green barrel")
-        # if total_blue_potions <= 10 and item.price <= total_gold:
-        #     if item.sku == "SMALL_BLUE_BARREL":
-        #         num_small_blue_barrels_to_purchase +=1
-        #         total_gold -= item.price
-        #         print("Bought small blue barrel")
-        #     '''elif item.sku == "MEDIUM_BLUE_BARREL":
-        #         num_medium_blue_barrels_to_purchase +=1
-        #         total_gold -= item.price
-        #         print("Bought medium blue barrel")'''
-        # if total_red_potions <= 10 and item.price <= total_gold:
-        #     if item.sku == "SMALL_RED_BARREL":
-        #         num_small_red_barrels_to_purchase +=1
-        #         total_gold -= item.price
-        #         print("Bought small red barrel")
-        #     '''elif item.sku == "MEDIUM_RED_BARREL":
-        #         num_medium_red_barrels_to_purchase +=1
-        #         total_gold -= item.price
-        #         print("Bought medium red barrel")'''
-        
 
 
     if(num_small_green_barrels_to_purchase > 0):
@@ -165,31 +227,69 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
             "sku": "SMALL_BLUE_BARREL",
             "quantity": num_small_blue_barrels_to_purchase,
         })
-    if(num_small_dark_barrels_to_purchase > 0):
+    
+    if(num_medium_green_barrels_to_purchase > 0):
+        purchase_plan.append({
+            "sku": "MEDIUM_GREEN_BARREL",
+            "quantity": num_medium_green_barrels_to_purchase,
+        })
+    if(num_medium_red_barrels_to_purchase > 0):
+        purchase_plan.append({
+            "sku": "MEDIUM_RED_BARREL",
+            "quantity": num_medium_red_barrels_to_purchase,
+        })
+    if(num_medium_blue_barrels_to_purchase > 0):
+        purchase_plan.append({
+            "sku": "MEDIUM_BLUE_BARREL",
+            "quantity": num_medium_blue_barrels_to_purchase,
+        })
+
+    if(num_large_green_barrels_to_purchase > 0):
+        purchase_plan.append({
+            "sku": "LARGE_GREEN_BARREL",
+            "quantity": num_large_green_barrels_to_purchase,
+        })
+    if(num_large_red_barrels_to_purchase > 0):
+        purchase_plan.append({
+            "sku": "LARGE_RED_BARREL",
+            "quantity": num_large_red_barrels_to_purchase,
+        })
+    if(num_large_blue_barrels_to_purchase > 0):
+        purchase_plan.append({
+            "sku": "LARGE_BLUE_BARREL",
+            "quantity": num_large_blue_barrels_to_purchase,
+        })
+    if(num_large_dark_barrels_to_purchase > 0):
         purchase_plan.append({
             "sku": "SMALL_DARK_BARREL",
-            "quantity": num_small_dark_barrels_to_purchase,
-        })
-    if(num_mini_dark_barrels_to_purchase > 0):
-        purchase_plan.append({
-            "sku": "MINI_DARK_BARREL",
-            "quantity": num_mini_dark_barrels_to_purchase,
+            "quantity": num_large_dark_barrels_to_purchase,
         })
 
-    # if(num_medium_green_barrels_to_purchase > 0):
-    #     purchase_plan.append({
-    #         "sku": "MEDIUM_GREEN_BARREL",
-    #         "quantity": num_medium_green_barrels_to_purchase,
-    #     })
-    # if(num_medium_red_barrels_to_purchase > 0):
-    #     purchase_plan.append({
-    #         "sku": "MEDIUM_RED_BARREL",
-    #         "quantity": num_medium_red_barrels_to_purchase,
-    #     })
-    # if(num_medium_blue_barrels_to_purchase > 0):
-    #     purchase_plan.append({
-    #         "sku": "MEDIUM_BLUE_BARREL",
-    #         "quantity": num_medium_blue_barrels_to_purchase,
-    #     })
 
     return purchase_plan
+
+
+
+def allowance(total_gold, ml_capacity):
+    allowance_plan = {}
+    if total_gold >= 1600 and ml_capacity >= 4:
+        allowance_plan = {"red_barrel_allowance": total_gold//4,
+                        "green_barrel_allowance": total_gold//4,
+                        "blue_barrel_allowance": total_gold//4,
+                        "dark_barrel_allowance": total_gold//4,
+                        "barrel_size": "large"}
+    elif total_gold < 1600 and ml_capacity >= 2:
+        allowance_plan["red_barrel_allowance": total_gold//3,
+                        "green_barrel_allowance": total_gold//3,
+                        "blue_barrel_allowance": total_gold//3,
+                        "dark_barrel_allowance": 0,
+                        "barrel_size": "medium"]
+    else:
+        allowance_plan = {"red_barrel_allowance": total_gold,
+                        "green_barrel_allowance": total_gold,
+                        "blue_barrel_allowance": total_gold,
+                        "dark_barrel_allowance": 0,
+                        "barrel_size": "small"}
+    return allowance_plan
+    
+    

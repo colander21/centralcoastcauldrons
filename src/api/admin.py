@@ -19,12 +19,24 @@ def reset():
     """
 
     with db.engine.begin() as connection:
+        connection.execute(sqlalchemy.text("DELETE FROM capacity;"))
+        connection.execute(sqlalchemy.text("INSERT INTO capacity (potion_capacity, ml_capacity) VALUES (1,1);"))
+
         connection.execute(sqlalchemy.text("DELETE FROM global_inventory;"))
         connection.execute(sqlalchemy.text("INSERT INTO global_inventory (gold) VALUES (100);"))
-        connection.execute(sqlalchemy.text("UPDATE barrels SET num_ml_red = 0, num_ml_green = 0, num_ml_dark = 0, num_ml_blue = 0;"))
-        connection.execute(sqlalchemy.text("UPDATE potions SET num_potions = 0, price = 35;"))
+
+        connection.execute(sqlalchemy.text("UPDATE potions SET price = 40;"))
+
+        connection.execute(sqlalchemy.text("DELETE FROM ml_ledger;"))
+        connection.execute(sqlalchemy.text("INSERT INTO ml_ledger (ml_id, num_ml) VALUES (1,0);"))
+        connection.execute(sqlalchemy.text("INSERT INTO ml_ledger (ml_id, num_ml) VALUES (2,0);"))
+        connection.execute(sqlalchemy.text("INSERT INTO ml_ledger (ml_id, num_ml) VALUES (3,0);"))
+        connection.execute(sqlalchemy.text("INSERT INTO ml_ledger (ml_id, num_ml) VALUES (4,0);"))
+
+        connection.execute(sqlalchemy.text("DELETE FROM potions_ledger;"))
+        for id in range(1,18):
+            connection.execute(sqlalchemy.text(f"INSERT INTO potions_ledger (potion_id, num_potions) VALUES ({id},0);"))
 
 
-    
     return "OK"
 

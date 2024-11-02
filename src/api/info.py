@@ -20,5 +20,17 @@ def post_time(timestamp: Timestamp):
     """
     Share current time.
     """
+
+    print("This is the current day", timestamp.day)
+
+    with db.engine.begin() as connection:
+        connection.execute(sqlalchemy.text(
+            '''UPDATE day 
+            SET current_day = :current_day'''),
+            {
+                "current_day": timestamp.day
+            }
+            )
+
     return "OK"
 

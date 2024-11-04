@@ -164,23 +164,23 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         for item in wholesale_catalog:
             if ((total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)) and item.price <= total_gold:
                 if item.sku == "MEDIUM_GREEN_BARREL":
-                    while(item.price <= total_gold and item.quantity > 0 and count_green_barrels_bought < 5):
+                    while(item.price <= barrel_allowances["green_barrel_allowance"] and item.quantity > 0 and count_green_barrels_bought < 5):
                         num_small_green_barrels_to_purchase +=1
-                        total_gold -= item.price
+                        barrel_allowances["green_barrel_allowance"] -= item.price
                         total_ml += item.ml_per_barrel
                         print("Bought medium green barrel")
                         count_green_barrels_bought += 1
                 elif item.sku == "MEDIUM_BLUE_BARREL":
-                    while(item.price <= total_gold and item.quantity > 0 and count_blue_barrels_bought < 5):
+                    while(item.price <= barrel_allowances["blue_barrel_allowance"] and item.quantity > 0 and count_blue_barrels_bought < 5):
                         num_small_blue_barrels_to_purchase +=1
-                        total_gold -= item.price
+                        barrel_allowances["blue_barrel_allowance"] -= item.price
                         total_ml += item.ml_per_barrel
                         print("Bought medium blue barrel")
                         count_blue_barrels_bought += 1
                 elif item.sku == "MEDIUM_RED_BARREL":
-                    while(item.price <= total_gold and item.quantity > 0 and count_red_barrels_bought < 5):
+                    while(item.price <= barrel_allowances["red_barrel_allowance"] and item.quantity > 0 and count_red_barrels_bought < 5):
                         num_small_red_barrels_to_purchase +=1
-                        total_gold -= item.price
+                        barrel_allowances["red_barrel_allowance"] -= item.price
                         total_ml += item.ml_per_barrel
                         print("Bought medium red barrel")
                         count_red_barrels_bought += 1
@@ -189,23 +189,23 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         for item in wholesale_catalog:
             if ((total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)) and item.price <= total_gold:
                 if item.sku == "LARGE_GREEN_BARREL":
-                    while(item.price <= total_gold and item.quantity > 0 and count_green_barrels_bought < 5):
+                    while(item.price <= barrel_allowances["green_barrel_allowance"] and item.quantity > 0 and count_green_barrels_bought < 5):
                         num_small_green_barrels_to_purchase +=1
-                        total_gold -= item.price
+                        barrel_allowances["green_barrel_allowance"] -= item.price
                         total_ml += item.ml_per_barrel
                         print("Bought large green barrel")
                         count_green_barrels_bought += 1
                 elif item.sku == "LARGE_BLUE_BARREL":
-                    while(item.price <= total_gold and item.quantity > 0 and count_blue_barrels_bought < 5):
+                    while(item.price <= barrel_allowances["blue_barrel_allowance"] and item.quantity > 0 and count_blue_barrels_bought < 5):
                         num_small_blue_barrels_to_purchase +=1
-                        total_gold -= item.price
+                        barrel_allowances["blue_barrel_allowance"] -= item.price
                         total_ml += item.ml_per_barrel
                         print("Bought large blue barrel")
                         count_blue_barrels_bought += 1
                 elif item.sku == "LARGE_RED_BARREL":
-                    while(item.price <= total_gold and item.quantity > 0 and count_red_barrels_bought < 5):
+                    while(item.price <= barrel_allowances["red_barrel_allowance"] and item.quantity > 0 and count_red_barrels_bought < 5):
                         num_small_red_barrels_to_purchase +=1
-                        total_gold -= item.price
+                        barrel_allowances["red_barrel_allowance"] -= item.price
                         total_ml += item.ml_per_barrel
                         print("Bought large red barrel")
                         count_red_barrels_bought += 1
@@ -272,13 +272,13 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
 def allowance(total_gold, ml_capacity):
     allowance_plan = {}
-    if total_gold >= 1600 and ml_capacity >= 4:
+    if total_gold >= 2000 and ml_capacity >= 4:
         allowance_plan = {"red_barrel_allowance": total_gold//4,
                         "green_barrel_allowance": total_gold//4,
                         "blue_barrel_allowance": total_gold//4,
                         "dark_barrel_allowance": total_gold//4,
                         "barrel_size": "large"}
-    elif total_gold < 1600 and ml_capacity >= 2:
+    elif total_gold < 1200 and ml_capacity >= 2:
         allowance_plan["red_barrel_allowance": total_gold//3,
                         "green_barrel_allowance": total_gold//3,
                         "blue_barrel_allowance": total_gold//3,

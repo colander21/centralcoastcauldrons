@@ -87,10 +87,14 @@ def get_bottle_plan():
             ml_dark.total_ml AS total_ml_dark, 
             potions.name
         FROM potions
-        JOIN ml AS ml_red ON ml_red.ml_id = 1
-        JOIN ml AS ml_green ON ml_green.ml_id = 2
-        JOIN ml AS ml_blue ON ml_blue.ml_id = 3
-        JOIN ml AS ml_dark ON ml_dark.ml_id = 4
+        JOIN ml AS ml_red 
+            ON ml_red.ml_id = 1
+        JOIN ml AS ml_green 
+            ON ml_green.ml_id = 2
+        JOIN ml AS ml_blue 
+            ON ml_blue.ml_id = 3
+        JOIN ml AS ml_dark 
+            ON ml_dark.ml_id = 4
         WHERE 
             potions.percent_red <= ml_red.total_ml
             AND potions.percent_green <= ml_green.total_ml

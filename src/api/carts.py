@@ -4,6 +4,7 @@ from src.api import auth
 from enum import Enum
 import datetime
 
+
 import sqlalchemy
 from src import database as db
 
@@ -56,18 +57,58 @@ def search_orders(
     time is 5 total line items.
     """
 
+
+    if sort_col is search_sort_options.customer_name:
+        order_by = db.carts.c.customer_name
+    elif sort_col is search_sort_options.item_sku:
+        order_by = db.potions.c.id
+    elif sort_col is search_sort_options.line_item_total:
+        order_by = db.carts.c.total_cost
+    elif sort_col is search_sort_options.timestamp:
+        order_by = db.carts.c.timestamp
+    else:
+        assert False
+
+    stmt = (
+        sqlalchemy.select(
+            db.carts.c.customer_name,
+            db.potions.c.name.label('potion_name'),
+            db.carts.c.total_cost,
+            db.carts.c.timestamp
+        ).join(
+            db.shopping_cart, db.shopping_cart.c.cart_id == db.carts.c.id
+        ).join(
+            db.potions, db.potions.c.id == db.shopping_cart.c.potion_id
+        )
+        .order_by(order_by, db.carts.c.timestamp)
+        .offset(5) # for paging offset by page number-1 * 5
+        .limit(5)
+
+    )
+
+    # stmt = sqlalchemy.select(db.carts.c.customer_name)
+
+    # filter only if name parameter is passed
+    if customer_name != "":
+        stmt = stmt.where(db.carts.c.customer_name(f"%{customer_name}%"))
+
+    with db.engine.connect() as conn:
+        result = conn.execute(stmt)
+        json = []
+        for row in result:
+            json.append(
+                {
+                    "customer": row.customer_name,
+                    "item": row.potion_name,
+                    "total_cost": row.total_cost,
+                    "timestamp": row.timestamp
+                }
+            )
+
     return {
         "previous": "",
         "next": "",
-        "results": [
-            {
-                "line_item_id": 1,
-                "item_sku": "1 oblivion potion",
-                "customer_name": "Scaramouche",
-                "line_item_total": 50,
-                "timestamp": "2021-01-01T00:00:00Z",
-            }
-        ],
+        "results": json
     }
 
 

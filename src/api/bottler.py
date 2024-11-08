@@ -102,6 +102,11 @@ def get_bottle_plan():
             AND potions.percent_dark <= ml_dark.total_ml
         ORDER BY potions.id ASC;''')).fetchall()
 
+        potion_capacity = connection.execute(sqlalchemy.text("SELECT SUM(potion_capacity) as potion_capacity FROM capacity;")).fetchone()
+        sum_potions = connection.execute(sqlalchemy.text("SELECT SUM(num_potions) as total_potions FROM potions_ledger;")).fetchone()
+        total_potion_cap = potion_capacity.potion_capacity
+        total_potions = sum_potions.total_potions
+
     if len(num_ml_data) == 0:
         return bottling_plan
     
@@ -157,11 +162,12 @@ def get_bottle_plan():
             total_ml_green -= potions_mixed * potion_type.percent_green
             total_ml_blue -= potions_mixed * potion_type.percent_blue
             total_ml_dark -= potions_mixed * potion_type.percent_dark
-            if potions_mixed > 0:
+            if potions_mixed > 0 and (total_potions + potions_mixed) < (total_potion_cap):
                 bottling_plan.append({
                     "potion_type": [potion_type.percent_red, potion_type.percent_green, potion_type.percent_blue, potion_type.percent_dark],
                     "quantity": potions_mixed
                 })
+                total_potions += potions_mixed
 
 
     return bottling_plan

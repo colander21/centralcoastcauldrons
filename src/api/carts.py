@@ -69,7 +69,15 @@ def search_orders(
     else:
         assert False
 
-    stmt = (
+    if search_page != "":
+        current_offset = int(search_page) * 5
+        previous_offset = current_offset - 5
+    else: 
+        offset = 0
+
+    next_offset = current_offset + 5
+
+    current_page = (
         sqlalchemy.select(
             db.carts.c.customer_name,
             db.potions.c.name.label('potion_name'),
@@ -81,35 +89,99 @@ def search_orders(
             db.potions, db.potions.c.id == db.shopping_cart.c.potion_id
         )
         .order_by(order_by, db.carts.c.timestamp)
-        .offset(5) # for paging offset by page number-1 * 5
+        .offset(current_offset) # for paging offset by page number-1 * 5
         .limit(5)
-
     )
 
-    # stmt = sqlalchemy.select(db.carts.c.customer_name)
+    if current_offset > 0:
+        previous_page = (
+            sqlalchemy.select(
+                db.carts.c.customer_name,
+                db.potions.c.name.label('potion_name'),
+                db.carts.c.total_cost,
+                db.carts.c.timestamp
+            ).join(
+                db.shopping_cart, db.shopping_cart.c.cart_id == db.carts.c.id
+            ).join(
+                db.potions, db.potions.c.id == db.shopping_cart.c.potion_id
+            )
+            .order_by(order_by, db.carts.c.timestamp)
+            .offset(previous_offset) # for paging offset by page number-1 * 5
+            .limit(5)
+        )
+
+    next_page = (
+        sqlalchemy.select(
+            db.carts.c.customer_name,
+            db.potions.c.name.label('potion_name'),
+            db.carts.c.total_cost,
+            db.carts.c.timestamp
+        ).join(
+            db.shopping_cart, db.shopping_cart.c.cart_id == db.carts.c.id
+        ).join(
+            db.potions, db.potions.c.id == db.shopping_cart.c.potion_id
+        )
+        .order_by(order_by, db.carts.c.timestamp)
+        .offset(next_offset) # for paging offset by page number-1 * 5
+        .limit(5)
+    )
+
+    # current_page = sqlalchemy.select(db.carts.c.customer_name)
 
     # filter only if name parameter is passed
     if customer_name != "":
-        stmt = stmt.where(db.carts.c.customer_name(f"%{customer_name}%"))
+        current_page = current_page.where(db.carts.c.customer_name(f"%{customer_name}%"))
+
+    previous_json = ""
 
     with db.engine.connect() as conn:
-        result = conn.execute(stmt)
-        json = []
-        for row in result:
-            json.append(
+        current_result = conn.execute(current_page)
+        current_json = []
+        for row in current_result:
+            current_json.append(
                 {
-                    "customer": row.customer_name,
-                    "item": row.potion_name,
-                    "total_cost": row.total_cost,
+                    "customer_name": row.customer_name,
+                    "item_sku": row.potion_name,
+                    "line_item_total": row.total_cost,
+                    "timestamp": row.timestamp
+                }
+            )
+        if current_offset > 0:
+            previous_result = conn.execute(previous_page)
+            previous_json = []
+            for row in previous_result:
+                previous_json.append(
+                    {
+                        "customer_name": row.customer_name,
+                        "item_sku": row.potion_name,
+                        "line_item_total": row.total_cost,
+                        "timestamp": row.timestamp
+                    }
+                )
+        next_result = conn.execute(next_page)
+        next_json = []
+        for row in next_result:
+            next_json.append(
+                {
+                    "customer_name": row.customer_name,
+                    "item_sku": row.potion_name,
+                    "line_item_total": row.total_cost,
                     "timestamp": row.timestamp
                 }
             )
 
     return {
-        "previous": "",
-        "next": "",
-        "results": json
+        "previous": previous_json,
+        "results": current_json,
+        "next": next_json
     }
+
+            #     "line_item_id": 1,
+            #     "item_sku": "1 oblivion potion",
+            #     "customer_name": "Scaramouche",
+            #     "line_item_total": 50,
+            #     "timestamp": "2021-01-01T00:00:00Z",
+            # }
 
 
 class Customer(BaseModel):

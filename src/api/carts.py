@@ -69,11 +69,13 @@ def search_orders(
     else:
         assert False
 
+    
+
     if search_page != "":
         current_offset = int(search_page) * 5
         previous_offset = current_offset - 5
-    else: 
-        offset = 0
+    else:
+        current_offset = 0
 
     next_offset = current_offset + 5
 

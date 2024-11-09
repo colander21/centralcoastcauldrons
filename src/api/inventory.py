@@ -44,11 +44,11 @@ def get_capacity_plan():
     with db.engine.begin() as connection:
         capacity_data = connection.execute(sqlalchemy.text("SELECT SUM(potion_capacity) AS potion_capacity, SUM(ml_capacity) AS ml_capacity FROM capacity;")).fetchone()
 
-    if(inventory["number_of_potions"] > (0.75 * capacity_data.potion_capacity * 50) and inventory["gold" > 1000]):
+    if(inventory["number_of_potions"] > (0.50 * capacity_data.potion_capacity * 50) and inventory["gold"] > 1000):
         potion_cap_plan += 1
 
-    if(inventory["number_of_potions"] > (0.75 * capacity_data.ml_capacity * 10000) and inventory["gold" > 1000]):
-        potion_cap_plan += 1
+    if(inventory["ml_in_barrels"] > (0.50 * capacity_data.ml_capacity * 10000) and inventory["gold"] > 1000) :
+        ml_cap_plan += 1
 
     return {
         "potion_capacity": potion_cap_plan,

@@ -6,6 +6,7 @@ import datetime
 
 
 import sqlalchemy
+from sqlalchemy import desc, asc
 from src import database as db
 
 router = APIRouter(
@@ -69,15 +70,21 @@ def search_orders(
     else:
         assert False
 
-    
-
-    if search_page != "":
-        current_offset = int(search_page) * 5
-        previous_offset = current_offset - 5
+    if search_page.startswith("?search_page="):
+        try:
+            page_num = int(search_page.split("=")[-1])
+        except ValueError:
+            page_num = 1
     else:
-        current_offset = 0
+        page_num = 1
+    
+    current_offset = (page_num -1) * 5
 
-    next_offset = current_offset + 5
+    if sort_order == search_sort_order.desc:
+        sorting_order = desc
+    else:
+        sorting_order = asc
+    
 
     current_page = (
         sqlalchemy.select(
@@ -90,41 +97,8 @@ def search_orders(
         ).join(
             db.potions, db.potions.c.id == db.shopping_cart.c.potion_id
         )
-        .order_by(order_by, db.carts.c.timestamp)
+        .order_by(sorting_order(order_by))
         .offset(current_offset) # for paging offset by page number-1 * 5
-        .limit(5)
-    )
-
-    if current_offset > 0:
-        previous_page = (
-            sqlalchemy.select(
-                db.carts.c.customer_name,
-                db.potions.c.name.label('potion_name'),
-                db.carts.c.total_cost,
-                db.carts.c.timestamp
-            ).join(
-                db.shopping_cart, db.shopping_cart.c.cart_id == db.carts.c.id
-            ).join(
-                db.potions, db.potions.c.id == db.shopping_cart.c.potion_id
-            )
-            .order_by(order_by, db.carts.c.timestamp)
-            .offset(previous_offset) # for paging offset by page number-1 * 5
-            .limit(5)
-        )
-
-    next_page = (
-        sqlalchemy.select(
-            db.carts.c.customer_name,
-            db.potions.c.name.label('potion_name'),
-            db.carts.c.total_cost,
-            db.carts.c.timestamp
-        ).join(
-            db.shopping_cart, db.shopping_cart.c.cart_id == db.carts.c.id
-        ).join(
-            db.potions, db.potions.c.id == db.shopping_cart.c.potion_id
-        )
-        .order_by(order_by, db.carts.c.timestamp)
-        .offset(next_offset) # for paging offset by page number-1 * 5
         .limit(5)
     )
 
@@ -132,9 +106,11 @@ def search_orders(
 
     # filter only if name parameter is passed
     if customer_name != "":
-        current_page = current_page.where(db.carts.c.customer_name(f"%{customer_name}%"))
+        current_page = current_page.where(db.carts.c.customer_name.like(f"%{customer_name}%"))
 
-    previous_json = ""
+    if potion_sku != "":
+        current_page = current_page.where(db.potions.c.name.like(f"%{potion_sku}%"))
+
 
     with db.engine.connect() as conn:
         current_result = conn.execute(current_page)
@@ -148,34 +124,21 @@ def search_orders(
                     "timestamp": row.timestamp
                 }
             )
-        if current_offset > 0:
-            previous_result = conn.execute(previous_page)
-            previous_json = []
-            for row in previous_result:
-                previous_json.append(
-                    {
-                        "customer_name": row.customer_name,
-                        "item_sku": row.potion_name,
-                        "line_item_total": row.total_cost,
-                        "timestamp": row.timestamp
-                    }
-                )
-        next_result = conn.execute(next_page)
-        next_json = []
-        for row in next_result:
-            next_json.append(
-                {
-                    "customer_name": row.customer_name,
-                    "item_sku": row.potion_name,
-                    "line_item_total": row.total_cost,
-                    "timestamp": row.timestamp
-                }
-            )
+
+    if page_num > 1:
+        previous = f"?search_page={page_num - 1}"
+    else: 
+        previous = ""
+        
+    if len(current_json) == 5:
+        next = f"?search_page={page_num +1}"
+    else: 
+        next = ""
 
     return {
-        "previous": previous_json,
+        "previous": previous,
         "results": current_json,
-        "next": next_json
+        "next": next
     }
 
             #     "line_item_id": 1,

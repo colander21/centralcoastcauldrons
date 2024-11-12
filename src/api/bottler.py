@@ -104,7 +104,7 @@ def get_bottle_plan():
 
         potion_capacity = connection.execute(sqlalchemy.text("SELECT SUM(potion_capacity) as potion_capacity FROM capacity;")).fetchone()
         sum_potions = connection.execute(sqlalchemy.text("SELECT SUM(num_potions) as total_potions FROM potions_ledger;")).fetchone()
-        total_potion_cap = potion_capacity.potion_capacity
+        total_potion_cap = potion_capacity.potion_capacity * 50
         total_potions = sum_potions.total_potions
 
     if len(num_ml_data) == 0:
@@ -137,6 +137,7 @@ def get_bottle_plan():
             total_ml_green >= potion_type.percent_green and
             total_ml_blue >= potion_type.percent_blue and
             total_ml_dark >= potion_type.percent_dark):
+            # print(potion_type)
 
             min_red_mix = 1000000
             min_green_mix = 1000000
@@ -162,7 +163,10 @@ def get_bottle_plan():
             total_ml_green -= potions_mixed * potion_type.percent_green
             total_ml_blue -= potions_mixed * potion_type.percent_blue
             total_ml_dark -= potions_mixed * potion_type.percent_dark
+
+            print(f"({total_potions} + {potions_mixed}) < ({total_potion_cap})")
             if potions_mixed > 0 and (total_potions + potions_mixed) < (total_potion_cap):
+               
                 bottling_plan.append({
                     "potion_type": [potion_type.percent_red, potion_type.percent_green, potion_type.percent_blue, potion_type.percent_dark],
                     "quantity": potions_mixed

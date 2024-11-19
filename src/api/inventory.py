@@ -53,6 +53,13 @@ def get_capacity_plan():
         ml_cap_plan += 1
         total_gold -= 1000
 
+    if(potion_cap_plan + ml_cap_plan) > 0:
+        with db.engine.begin() as connection:
+            connection.execute(sqlalchemy.text("INSERT INTO global_inventory (gold) VALUES (:total_spent);"),
+                    {
+                        "total_spent": (potion_cap_plan + ml_cap_plan) * 1000
+                    })
+
     return {
         "potion_capacity": potion_cap_plan,
         "ml_capacity": ml_cap_plan

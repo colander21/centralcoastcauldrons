@@ -45,20 +45,17 @@ def get_capacity_plan():
     with db.engine.begin() as connection:
         capacity_data = connection.execute(sqlalchemy.text("SELECT SUM(potion_capacity) AS potion_capacity, SUM(ml_capacity) AS ml_capacity FROM capacity;")).fetchone()
 
-    if(inventory["number_of_potions"] > (0.50 * capacity_data.potion_capacity * 50) and total_gold > 1000):
+    # if(inventory["number_of_potions"] > (0.50 * capacity_data.potion_capacity * 50) and total_gold > 1000):
+    #     potion_cap_plan += 1
+    #     total_gold -= 1000
+
+    while(inventory["number_of_potions"] > (0.50 * capacity_data.potion_capacity * 50) and total_gold > 1000 and potion_cap_plan < 2):
         potion_cap_plan += 1
         total_gold -= 1000
 
-    if(inventory["ml_in_barrels"] > (0.50 * capacity_data.ml_capacity * 10000) and total_gold > 1000):
+    while(inventory["ml_in_barrels"] > (0.50 * capacity_data.ml_capacity * 10000) and total_gold > 1000 and ml_cap_plan < 2):
         ml_cap_plan += 1
         total_gold -= 1000
-
-    if(potion_cap_plan + ml_cap_plan) > 0:
-        with db.engine.begin() as connection:
-            connection.execute(sqlalchemy.text("INSERT INTO global_inventory (gold) VALUES (:total_spent);"),
-                    {
-                        "total_spent": (potion_cap_plan + ml_cap_plan) * 1000
-                    })
 
     return {
         "potion_capacity": potion_cap_plan,
@@ -87,6 +84,12 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
                 "ml_cap": capacity_purchase.ml_capacity
             }
             )
+        if(capacity_purchase.potion_capacity + capacity_purchase.ml_capacity) > 0:
+            with db.engine.begin() as connection:
+                connection.execute(sqlalchemy.text("INSERT INTO global_inventory (gold) VALUES (:total_spent);"),
+                    {
+                        "total_spent": -(capacity_purchase.potion_capacity + capacity_purchase.ml_capacity) * 1000
+                    })
 
     return "OK"
 

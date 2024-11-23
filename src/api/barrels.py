@@ -277,7 +277,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         })
     if(num_large_dark_barrels_to_purchase > 0):
         purchase_plan.append({
-            "sku": "SMALL_DARK_BARREL",
+            "sku": "LARGE_DARK_BARREL",
             "quantity": num_large_dark_barrels_to_purchase,
         })
 

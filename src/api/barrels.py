@@ -130,10 +130,13 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     # Decide what size barrels to buy
     barrel_allowances = allowance(total_gold, capacity_data.ml_capacity)
     print("Barrel Allowance: ", barrel_allowances)
+    #barrel_allowances["barrel_size"] = "medium"
 
     count_red_barrels_bought = 0
     count_green_barrels_bought = 0
     count_blue_barrels_bought = 0
+    count_dark_barrels_bought = 0
+
     if barrel_allowances.get("barrel_size") == "small":
         for item in wholesale_catalog:
             if ((total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)) and item.price <= total_gold:
@@ -185,30 +188,43 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                         print("Bought medium red barrel")
                         count_red_barrels_bought += 1
 
-    if barrel_allowances.get("barrel_size") == "large":
+    if barrel_allowances["barrel_size"] == "large":
         for item in wholesale_catalog:
+            print("current item: ", item)
             if ((total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)) and item.price <= total_gold:
+                print("able to buy this item")
                 if item.sku == "LARGE_GREEN_BARREL":
-                    while(item.price <= barrel_allowances["green_barrel_allowance"] and item.quantity > 0 and count_green_barrels_bought < 5 and (total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)):
+                    print("This is large green")
+                    while(item.price <= barrel_allowances["green_barrel_allowance"] and item.quantity > 0 and count_green_barrels_bought < 1 and (total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)):
                         num_large_green_barrels_to_purchase +=1
                         barrel_allowances["green_barrel_allowance"] -= item.price
                         total_ml += item.ml_per_barrel
                         print("Bought large green barrel")
                         count_green_barrels_bought += 1
                 elif item.sku == "LARGE_BLUE_BARREL":
-                    while(item.price <= barrel_allowances["blue_barrel_allowance"] and item.quantity > 0 and count_blue_barrels_bought < 5 and (total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)):
+                    print("This is large blue")
+                    while(item.price <= barrel_allowances["blue_barrel_allowance"] and item.quantity > 0 and count_blue_barrels_bought < 1 and (total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)):
                         num_large_blue_barrels_to_purchase +=1
                         barrel_allowances["blue_barrel_allowance"] -= item.price
                         total_ml += item.ml_per_barrel
                         print("Bought large blue barrel")
                         count_blue_barrels_bought += 1
                 elif item.sku == "LARGE_RED_BARREL":
-                    while(item.price <= barrel_allowances["red_barrel_allowance"] and item.quantity > 0 and count_red_barrels_bought < 5 and (total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)):
+                    print("This is large red")
+                    while(item.price <= barrel_allowances["red_barrel_allowance"] and item.quantity > 0 and count_red_barrels_bought < 1 and (total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)):
                         num_large_red_barrels_to_purchase +=1
                         barrel_allowances["red_barrel_allowance"] -= item.price
                         total_ml += item.ml_per_barrel
                         print("Bought large red barrel")
                         count_red_barrels_bought += 1
+                elif item.sku == "LARGE_DARK_BARREL":
+                    print("This is large dark")
+                    while(item.price <= barrel_allowances["dark_barrel_allowance"] and item.quantity > 0 and count_dark_barrels_bought < 1 and (total_ml + item.ml_per_barrel) <= (capacity_data.ml_capacity * 10000)):
+                        num_large_dark_barrels_to_purchase +=1
+                        barrel_allowances["dark_barrel_allowance"] -= item.price
+                        total_ml += item.ml_per_barrel
+                        print("Bought large dark barrel")
+                        count_dark_barrels_bought += 1
 
 
 
